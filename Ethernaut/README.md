@@ -1,4 +1,4 @@
-# List of Challenges
+# Challenges
 1. [Fallback](#1-fallback)
 2. [Fallout](#2-fallout)
 # 1. Fallback

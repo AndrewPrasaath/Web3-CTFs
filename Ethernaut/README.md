@@ -1,5 +1,6 @@
 # List of Challenges
-1. [Fallback challenge](#1-fallback)
+1. [Fallback](#1-fallback)
+2. [Fallout](#2-fallout)
 # 1. Fallback
 ### Challenge
 - Claim ownership of the contract
@@ -57,6 +58,65 @@ How can we exploit this? There are two ways to claim ownership here: contribute 
 ##### Exploit
 All we need is a test ETH of 2 wei for the contract and the required test ETH for gas. I used `Remix IDE` (other options Etherscan, Hardhat, etc).
 1. Invoke `contribute()` function with 1 wei. This will satisfy `contributions[msg.sender] > 0` condition
-2. Send `1 wei` to the contract address. Ownership is transferred.\
+2. Send `1 wei` to the contract address. Ownership is transferred.
+3. Since ownership is changed we can access `withdraw()` with `onlyOwner` modifier. Call `withdraw()` to drain the contract balance.\
 \
-Congratulations! We successfully became the owner of the `Fallback contract`.
+Congratulations! We successfully became the owner of the `Fallback contract` and stole the balance in it.
+
+# 2. Fallout
+### Challenge
+- Claim ownership of the contract
+### Contract
+```
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.6.0;
+
+import 'openzeppelin-contracts-06/math/SafeMath.sol';
+
+contract Fallout {
+  
+  using SafeMath for uint256;
+  mapping (address => uint) allocations;
+  address payable public owner;
+
+
+  /* constructor */
+  function Fal1out() public payable {
+    owner = msg.sender;
+    allocations[owner] = msg.value;
+  }
+
+  modifier onlyOwner {
+	        require(
+	            msg.sender == owner,
+	            "caller is not the owner"
+	        );
+	        _;
+	    }
+
+  function allocate() public payable {
+    allocations[msg.sender] = allocations[msg.sender].add(msg.value);
+  }
+
+  function sendAllocation(address payable allocator) public {
+    require(allocations[allocator] > 0);
+    allocator.transfer(allocations[allocator]);
+  }
+
+  function collectAllocations() public onlyOwner {
+    msg.sender.transfer(address(this).balance);
+  }
+
+  function allocatorBalance(address allocator) public view returns (uint) {
+    return allocations[allocator];
+  }
+}
+```
+### Solution
+##### Explanation
+**Solidity v0.5.0 Breaking Changes:** Constructor needs to be defined using the `constructor` keyword instead defining a function with the same name as the contract. [solidity doc link](https://docs.soliditylang.org/en/v0.8.20/050-breaking-changes.html#constructors)\
+Solidity compiler throws an error if there is a function with the name of the contract. That's the reason here they misspelled the `Fal1out` for `Fallout`. Since this uses a version above 0.5.0, the `constructor` keyword must be used for the constructor. This makes the function `Fal1out` just a normal function that can be called by anyone.
+##### Exploit
+1. Call `Fal1out()` and the ownership is changed.\
+\
+Hurray! We got another ownership.

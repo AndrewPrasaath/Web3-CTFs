@@ -130,7 +130,7 @@ Hurray! We got another ownership.
 ### Challenge
 - Predict the outcome coin flip 10 times in a row.
 ### Purpose
-Understanding generating random numbers in solidity can be tricky. 
+Understanding generating random numbers in solidity and their potential threat. 
 ### Contract
 ```
 // SPDX-License-Identifier: MIT

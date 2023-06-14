@@ -3,8 +3,10 @@
 2. [Fallout](#2-fallout)
 # 1. Fallback
 ### Challenge
-- Claim ownership of the contract
-- Reduce its balance to 0
+- Claim ownership of the contract.
+- Reduce its balance to 0.
+### Purpose
+To know the basics of how ether goes in and out of contracts, including the usage of the fallback method.
 ### Contract
 ```
 // SPDX-License-Identifier: MIT
@@ -66,6 +68,8 @@ Congratulations! We successfully became the owner of the `Fallback contract` and
 # 2. Fallout
 ### Challenge
 - Claim ownership of the contract
+### Purpose
+Keep upto date with solidity updates.
 ### Contract
 ```
 // SPDX-License-Identifier: MIT
@@ -120,3 +124,4 @@ Solidity compiler throws an error if there is a function with the name of the co
 1. Call `Fal1out()` and the ownership is changed.\
 \
 Hurray! We got another ownership.
+

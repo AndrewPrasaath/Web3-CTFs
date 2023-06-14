@@ -2,6 +2,7 @@
 1. [Fallback](#1-fallback)
 2. [Fallout](#2-fallout)
 3. [Coin Flip](#3-coin-flip)
+4. [Telephone](#4-telephone)
 # 1. Fallback
 ### Challenge
 - Claim ownership of the contract.
@@ -201,3 +202,15 @@ contract AttackCoinFlip {
 Submit the contract instance on Ethernaut to claim the win.\
 To get cryptographically proven random numbers, we can use Chainlink VRF, which uses an oracle, the LINK token, and an on-chain contract to verify that the number is truly random.\
 Some other options include using Bitcoin block headers (verified through BTC Relay, RANDAO, or Oraclize).
+
+# 4. Telephone
+### Challenge
+- 
+### Purpose
+
+### Contract
+```
+```
+### Solution
+##### Explanation
+##### Exploit

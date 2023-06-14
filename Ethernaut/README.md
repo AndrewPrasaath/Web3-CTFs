@@ -170,7 +170,7 @@ contract CoinFlip {
 ### Solution
 ##### Explanation
 There currently isn't a native way to generate them, and everything we use in smart contracts is publicly visible, including the local variables and state variables marked as private. Miners also have control over things like block hashes, timestamps, and whether to include certain transactions - which allows them to bias these values in their favor.\
-I create another contract to attack `CoinFlip` by exploiting the same logic and factor used in it. Making an external call from an attack contract sends one transaction so that both will have the same block information.
+I created another contract to attack `CoinFlip` by exploiting the same logic and factor used in it. Making an external call from an attack contract sends one transaction so that both will have the same block information. So, we can predict the ouput of `flip()` and pass that as argument to pass the condition.
 ##### Exploit
 ```
 import "./CoinFlip.sol"
@@ -196,7 +196,7 @@ contract AttackCoinFlip {
 }
 ```
 1. Deploy the `AttackCoinFlip` contract with `CoinFlip` address as an argument.
-2. Invoke `attack` 10 times to increase `consecutiveWins` in CoinFlip (check whether `consecutiveWins` has a value minimum of 10).\
+2. Invoke `attack()` 10 times to increase `consecutiveWins` state variable in CoinFlip contract (check whether `consecutiveWins` has a value minimum of 10).\
 \
 Submit the contract instance on Ethernaut to claim the win.\
 To get cryptographically proven random numbers, we can use Chainlink VRF, which uses an oracle, the LINK token, and an on-chain contract to verify that the number is truly random.\

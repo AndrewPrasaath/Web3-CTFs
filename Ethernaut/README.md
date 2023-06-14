@@ -55,7 +55,7 @@ contract Fallback {
 ```
 ### Solution
 ##### Explanation
-**Receive function:** It executes on calls to the contract with no calldata, e.g. calls made via send() or transfer(). This is a function triggered when a contract receives ether without any calldata.\
+**Receive function:** It executes on calls to the contract with no calldata, e.g. calls made via send() or transfer(). This is a function triggered when a contract receives ether without any calldata. [solidity doc link](https://docs.soliditylang.org/en/v0.8.20/contracts.html#receive-ether-function)\
 \
 How can we exploit this? There are two ways to claim ownership here: contribute to the contract more than the current owner (or) exploit the faulty check-in receive function. If we have any value of contribution and send any amount of ether to the contract, we will claim the ownership.
 ##### Exploit

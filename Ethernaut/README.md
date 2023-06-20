@@ -199,7 +199,8 @@ contract AttackCoinFlip {
 1. Deploy the `AttackCoinFlip` contract with `CoinFlip` address as an argument.
 2. Invoke `attack()` 10 times to increase `consecutiveWins` state variable in CoinFlip contract (check whether `consecutiveWins` has a value minimum of 10).\
 \
-Submit the contract instance on Ethernaut to claim the win.\
+Submit the contract instance on Ethernaut to claim the win.
+##### Takeaway
 To get cryptographically proven random numbers, we can use Chainlink VRF, which uses an oracle, the LINK token, and an on-chain contract to verify that the number is truly random.\
 Some other options include using Bitcoin block headers (verified through BTC Relay, RANDAO, or Oraclize).
 
@@ -242,7 +243,9 @@ contract AttackTelephone
 ```
 1. Deploy above contract with `Telephone` contract instance as constructor parameter.
 2. Invoke `attack()` function to claim the ownership
-Just like that ownership is transfered. It is recommended to use `msg.sender` for access checks instead of `tx.origin`. Phishing attack like fooling an user to send tx for different purpose and making an internal tx to the target contract leads pass checks that uses `tx.origin`.
+Just like that ownership is transfered.
+##### Takeaway
+It is recommended to use `msg.sender` for access checks instead of `tx.origin`. Phishing attack like fooling an user to send tx for different purpose and making an internal tx to the target contract leads pass checks that uses `tx.origin`.
 
 # 5. Token
 ### Challenge

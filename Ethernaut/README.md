@@ -208,7 +208,7 @@ Some other options include using Bitcoin block headers (verified through BTC Rel
 ### Challenge
 - Claim ownership of the contract
 ### Purpose
-Understanding potential threat of using `tx.origin` for access check and potential phishing attack using this. [link](https://blog.ethereum.org/2016/06/24/security-alert-smart-contract-wallets-created-in-frontier-are-vulnerable-to-phishing-attacks)
+Understanding the potential threat of using `tx.origin` for access check and potential phishing attacks using this. [link](https://blog.ethereum.org/2016/06/24/security-alert-smart-contract-wallets-created-in-frontier-are-vulnerable-to-phishing-attacks)
 ### Contract
 ```
 // SPDX-License-Identifier: MIT
@@ -232,20 +232,20 @@ contract Telephone {
 ### Solution
 ##### Explanation
 **tx.origin-** Gives address of the EOA that initiated the tx (only EOA can initiate tx as of now). [link](https://docs.soliditylang.org/en/v0.8.20/security-considerations.html#tx-origin)https://docs.soliditylang.org/en/v0.8.20/security-considerations.html#tx-origin
-**msg.sender-** Gives address of the account that called current message/tx.\
+**msg.sender-** Gives address of the account that is called current message/tx.\
 ```
 EOA -> contract A -> contract B
 ```
-In above illustration, msg.sender and tx.origin of contract A is the EOA. Whereas for contract B, msg.sender is contract A and tx.origin is EOA. Since `Telephone` contract only checks for tx originator not to be equal of the message sender, one middle contract is enough to claim the ownership.
+In the above illustration, msg.sender and tx.origin of contract A is the EOA. Whereas for contract B, msg.sender is contract A, and tx.origin is EOA. Since the `Telephone` contract only checks for the tx originator not to be equal to the message sender, one middle contract is enough to claim the ownership.
 ##### Exploit
 ```
 contract AttackTelephone
 ```
-1. Deploy above contract with `Telephone` contract instance as constructor parameter.
+1. Deploy the above contract with the `Telephone` contract instance as a constructor parameter.
 2. Invoke `attack()` function to claim the ownership
-Just like that ownership is transfered.
+Just like that ownership is transferred.
 ##### Takeaway
-It is recommended to use `msg.sender` for access checks instead of `tx.origin`. Phishing attack like fooling an user to send tx for different purpose and making an internal tx to the target contract leads pass checks that uses `tx.origin`.
+It is recommended to use `msg.sender` for access checks instead of `tx.origin`. Phishing attack like fooling a user to send tx for different purposes and making an internal tx to the target contract leads to passing checks that use `tx.origin`.
 
 # 5. Token
 ### Challenge

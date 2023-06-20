@@ -243,3 +243,38 @@ contract AttackTelephone
 1. Deploy above contract with `Telephone` contract instance as constructor parameter.
 2. Invoke `attack()` function to claim the ownership
 Just like that ownership is transfered. It is recommended to use `msg.sender` for access checks instead of `tx.origin`. Phishing attack like fooling an user to send tx for different purpose and making an internal tx to the target contract leads pass checks that uses `tx.origin`.
+
+# 5. Token
+### Challenge
+- Hack Token contract to get additional tokens than allotted.
+### Purpose
+Know the risk of integer overflow/underflow in solidity.
+### Contract
+```
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.6.0;
+
+contract Token {
+
+  mapping(address => uint) balances;
+  uint public totalSupply;
+
+  constructor(uint _initialSupply) public {
+    balances[msg.sender] = totalSupply = _initialSupply;
+  }
+
+  function transfer(address _to, uint _value) public returns (bool) {
+    require(balances[msg.sender] - _value >= 0);
+    balances[msg.sender] -= _value;
+    balances[_to] += _value;
+    return true;
+  }
+
+  function balanceOf(address _owner) public view returns (uint balance) {
+    return balances[_owner];
+  }
+}
+```
+### Solution
+##### Explanation
+##### Exploit

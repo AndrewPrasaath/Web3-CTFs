@@ -280,4 +280,6 @@ contract Token {
 ```
 ### Solution
 ##### Explanation
+Before solidity v0.8.0, there is no default check for integer overflow/underflow ([link](https://docs.soliditylang.org/en/v0.8.0/080-breaking-changes.html#solidity-v0-8-0-breaking-changes)).\
+Require statement in the `transfer` function of `Token` contract substracts value from message sender's balance. Since this contract using version 0.6.0, substraction below 0 will be wrapped to upper bound of uint. Any sender invoking `transfer` function with any value to anyone can spike their token balance.
 ##### Exploit

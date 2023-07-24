@@ -3,6 +3,7 @@
 2. [Fallout](#2-fallout)
 3. [Coin Flip](#3-coin-flip)
 4. [Telephone](#4-telephone)
+5. [Token](#5-token)
 # 1. Fallback
 ### Challenge
 - Claim ownership of the contract.
@@ -283,3 +284,19 @@ contract Token {
 Before solidity v0.8.0, there is no default check for integer overflow/underflow ([link](https://docs.soliditylang.org/en/v0.8.0/080-breaking-changes.html#solidity-v0-8-0-breaking-changes)).\
 Require statement in the `transfer` function of the `Token` contract subtracts value from the message sender's balance. Since this contract uses version 0.6.0, subtraction below 0 will be wrapped to the upper bound of uint256. Instance owners invoking the `transfer` function with any value greater than 20 (by default we are provided with 20 tokens) can spike their token balance.
 ##### Exploit
+1. Get the instance of the contract in Remix.
+2. Call transfer function with "_to" address can anything other than the invoker and second argument value to be greater than 20.
+3. Now the balance of the invoker wrapped to upper bound of uint256.
+Yaay! we got our hands over huge amount of tokens
+##### Takeaway from Ethernaut
+Overflows are very common in solidity and must be checked for with control statements such as:\
+```
+if(a + c > a) {
+  a = a + c;
+}
+```
+An easier alternative is to use OpenZeppelin's SafeMath library that automatically checks for overflows in all the mathematical operators. The resulting code looks like this:\
+```
+a = a.add(c);
+```
+If there is an overflow, the code will revert.

@@ -200,7 +200,7 @@ I created another contract to attack `CoinFlip` by exploiting the same logic and
 import "./CoinFlip.sol"
 
 contract AttackCoinFlip {
-    CoinFlip public target;
+    CoinFlip public immutable target;
     uint256 FACTOR = 57896044618658097711785492504343953926634992332820282019728792003956564819968;
 
     constructor(CoinFlip _target) {
@@ -259,7 +259,7 @@ contract Telephone {
 ```
 EOA -> contract A -> contract B
 ```
-In the above illustration, msg.sender and tx.origin of contract A is the EOA. Whereas for contract B, msg.sender is contract A, and tx.origin is EOA. Since the `Telephone` contract only checks for the tx originator not to be equal to the message sender, one middle contract is enough to claim the ownership.
+In the above illustration, msg.sender and tx.origin of contract A is the EOA. Whereas for contract B, msg.sender is contract A and tx.origin is EOA. Since the `Telephone` contract only checks for the tx originator not to be equal to the message sender, one middle contract is enough to claim the ownership.
 ##### Exploit
 ```
 contract AttackTelephone {
@@ -311,9 +311,9 @@ Before solidity v0.8.0, there is no default check for integer overflow/underflow
 Require statement in the `transfer` function of the `Token` contract subtracts value from the message sender's balance. Since this contract uses version 0.6.0, subtraction below 0 will be wrapped to the upper bound of uint256. Instance owners invoking the `transfer` function with any value greater than 20 (by default we are provided with 20 tokens) can spike their token balance.
 ##### Exploit
 1. Get the instance of the contract in Remix.
-2. Call transfer function with "_to" address can anything other than the invoker and second argument value to be greater than 20.
-3. Now the balance of the invoker wrapped to upper bound of uint256.
-Yaay! we got our hands over huge amount of tokens
+2. Call transfer function with "_to" address can be anything other than the invoker and the second argument value to be greater than 20.
+3. Now the balance of the invoker is wrapped to the upper bound of uint256.
+Yaay! We got our hands over a huge amount of tokens
 ##### Takeaway from Ethernaut
 Overflows are very common in solidity and must be checked for with control statements such as:\
 ```
@@ -321,7 +321,7 @@ if(a + c > a) {
   a = a + c;
 }
 ```
-An easier alternative is to use OpenZeppelin's SafeMath library that automatically checks for overflows in all the mathematical operators. The resulting code looks like this:\
+An easier alternative is to use OpenZeppelin's SafeMath library which automatically checks for overflows in all the mathematical operators. The resulting code looks like this:\
 ```
 a = a.add(c);
 ```
@@ -370,13 +370,13 @@ contract Delegation {
 ```
 ### Solution
 ##### Explanation
-`delegatecall` calls a cotract without changing the context of caller contract. Which means storage and message are same as of caller contract. Read more about delegate call [here](https://solidity-by-example.org/delegatecall/). Whenever a contract called with unmatched methodId, fallback function is triggered. Read more on fallback [here](https://www.educative.io/answers/what-is-the-fallback-function-in-solidity).\
-With an instance with `Delegate` contract ABI, we can easily call easily change owner since the challenge instance is for `Delegation`. In remix, we can do this by selecting `Delegate` contract and getting the instance at `Delegation` contract address. This way ABI is matching to `Delegate`.\
-If we call `pwn()` from the instance, the contract wouldn't not recognize since the Delegation contract doesn't have any matching methodId. This will trigger the fallback in Delegation which takes `msg.data` as argument (msg.data is the methodId). Since the msg.sender will be not change and storage slot of owner is same for both contract, the owner in Delegation will be changed.
+`delegatecall` calls a contract without changing the context of the caller contract. This means storage and message are the same as the caller contract. Read more about delegate calls [here](https://solidity-by-example.org/delegatecall/). Whenever a contract is called with unmatched methodId, a fallback function is triggered. Read more on fallback [here](https://www.educative.io/answers/what-is-the-fallback-function-in-solidity).\
+With an instance with a `Delegate` contract ABI, we can easily change the owner since the challenge instance is for `Delegation`. In the remix, we can do this by selecting the `Delegate` contract and getting the instance at the `Delegation` contract address. This way ABI is matching to `Delegate`.\
+If we call `pwn()` from the instance, the contract wouldn't recognize since the Delegation contract doesn't have any matching methodId. This will trigger the fallback in Delegation which takes `msg.data` as an argument (msg.data is the methodId). Since the msg.sender will be not changing and the storage slot of the owner is the same for both contracts, the owner in Delegation will be changed.
 ##### Exploit
 1. Get an instance at `Delegation` contract address with `Delegate` contract ABI.
-2. Call the `pwn()` and the owner of Delegation will be changed.
-Note: change the gas limit to higher value since recomended gas limit in metamask not sufficient for this challenge.
+2. Call the `pwn()` and the owner of the Delegation will be changed.
+Note: change the gas limit to a higher value since the recommended gas limit in the metamask is not sufficient for this challenge.
 ##### Takeaway from Ethernaut
 Usage of delegatecall is particularly risky and has been used as an attack vector on multiple historic hacks. With it, your contract is practically saying "here, -other contract- or -other library-, do whatever you want with my state". Delegates have complete access to your contract's state. The delegatecall function is a powerful feature, but a dangerous one, and must be used with extreme care.\
 Please refer to the [The Parity Wallet Hack Explained](https://blog.openzeppelin.com/on-the-parity-wallet-multisig-hack-405a8c12e8f7) article for an accurate explanation of how this idea was used to steal 30M USD.
@@ -385,7 +385,7 @@ Please refer to the [The Parity Wallet Hack Explained](https://blog.openzeppelin
 ### Challenge
 - The goal of this level is to make the balance of the contract greater than zero.
 ### Purpose
-To account different ways a contract balance can be manipulated.
+To account for different ways a contract balance can be manipulated.
 ### Contract
 ```
 // SPDX-License-Identifier: MIT
@@ -393,7 +393,7 @@ pragma solidity ^0.8.0;
 
 contract Force {/*
 
-                   MEOW ?
+                   MEOW?
          /\_/\   /
     ____/ o o \
   /~____  =ø= /
@@ -403,26 +403,26 @@ contract Force {/*
 ```
 ### Solution
 ##### Explanation
-There are two ways to send ether to a contract without their permission. One is via the coinbase account where the miner provide contract address instead of theirs to get minning reward. Another way is through `selfdestruct`.\
-When a contract selfdestruct, it can provide an address to send the balance in it. By creating a contract with balance and self destructing it by providing the instance address will clear this challenge.
+There are two ways to send ether to a contract without their permission. One is via the coinbase account where the miner provides a contract address instead of theirs to get a minning reward. Another way is through `selfdestruct`.\
+When a contract self-destructs, it can provide an address to send the balance in it. Creating a contract with balance and self-destructing it by providing the instance address will clear this challenge.
 ##### Exploit
 ```
 contract AttackForce {
-    Force public target;
+    Force public immutable targetContractAddress;
 
-    constructor(Force _target) payable {
-        target = _target;
+    constructor(Force _targetContractAddress) payable {
+        targetContractAddress = _targetContractAddress;
     }
 
     function attack() external {
-        selfdestruct(payable(address(target)));
-        assert(address(target).balance > 0);
+        selfdestruct(payable(targetContractAddress));
+        assert(targetContractAddress.balance > 0);
     }
 }
 ```
-1. Deploy above contract with 1 wei.
-2. Call `attack()` to selfdestruct and send the balance to `Force` contract.\
-That's it, now `Force` contract have non zero balance (you can check it in etherscan).
+1. Deploy the above contract with 1 wei.
+2. Call `attack()` to self-destruct and send the balance to the `Force` contract.\
+That's it, now the `Force` contract has a non-zero balance (you can check it in Etherscan).
 ##### Takeaway from Ethernaut
 In solidity, for a contract to be able to receive ether, the fallback function must be marked payable.\
 However, there is no way to stop an attacker from sending ether to a contract by self-destroying. Hence, it is important not to count on the invariant address(this).balance == 0 for any contract logic.

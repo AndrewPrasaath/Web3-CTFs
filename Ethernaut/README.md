@@ -6,7 +6,7 @@
 5. [Token](#5-token)
 6. [Delegation](#6-delegation)
 7. [Force](#7-force)
-8. [Vault](#8-Vault)
+8. [Vault](#8-vault)
 9. [King]
 10. [Re-entrancy]
 11. [Elevator]

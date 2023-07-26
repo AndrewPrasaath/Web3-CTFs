@@ -10,16 +10,16 @@
 9. [King](#9-king)
 10. [Re-entrancy](#10-re-entrancy)
 11. [Elevator](#11-elevator)
-12. [Privacy]
+12. [Privacy](yet to update)
 13. ~[Gatekeeper One]~
 14. ~[Gatekeeper Two]~
-15. [Naught Coin]
-16. [Preservation]
-17. [Recovery]
+15. [Naught Coin](yet to update)
+16. [Preservation](yet to update)
+17. [Recovery](yet to update)
 18. [MagicNumber](yet to update)
 19. ~[Alien Codex]~
-20. [Denial]
-21. [Shop]
+20. [Denial](yet to update)
+21. [Shop](yet to update)
 22. [Dex](yet to update)
 23. [Dex Two](yet to update)
 24. ~[Puzzle Wallet]~

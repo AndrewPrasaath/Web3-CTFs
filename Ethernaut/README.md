@@ -905,7 +905,7 @@ As the previous level, `delegate` mentions, the use of `delegatecall` to call li
 
 # 17. Recovery
 ### Challenge
-- This level will be completed if you can recover (or remove) the 0.001 ether from the lost contract address.
+- This level will be completed if we can recover (or remove) the 0.001 ether from the lost contract address.
 ### Purpose
 Know how contract address created.
 ### Contract
@@ -952,9 +952,75 @@ contract SimpleToken {
 ```
 ### Solution
 ##### Explanation
+There is a factory contract that has been called to create a new contract instance. Someone deposited funds on this contract instance but “forgot the address”. Our goal is to find out what address the contract was deployed to and call its `destroy` function.\
+Address of a contract is created from sender and tx's nonce. In this case, `Recovery` address and the nonce while creating `SimpleToken` which is **1**. Using ethers, a call to `getContractAddress` is enough to do the get the lost address.
+##### Exploit
+```
+const lostContractAddress = ethers.utils.getContractAddress({
+  from: recoveryContract.address,
+  nonce: BigNumber.from(`1`),
+})
+```
+1. Get the lost contract address from above script.
+2. Call `destroy()` on it.
+##### Takeaway from Ethernaut
+Contract addresses are deterministic and are calculated by `keccak256(address, nonce)` where the `address` is the address of the contract (or ethereum address that created the transaction) and `nonce` is the number of contracts the spawning contract has created (or the transaction nonce, for regular transactions).\
+Because of this, one can send ether to a pre-determined address (which has no private key) and later create a contract at that address which recovers the ether. This is a non-intuitive and somewhat secretive way to (dangerously) store ether without holding a private key.\
+\
+An interesting [blog post](https://swende.se/blog/Ethereum_quirks_and_vulns.html) by Martin Swende details potential use cases of this.\
+If you're going to implement this technique, make sure you don't miss the nonce, or your funds will be lost forever.
+
+# 18. MagicNumber
+### Challenge
+- 
+### Purpose
+
+### Contract
+```
+
+```
+### Solution
+##### Explanation
 
 ##### Exploit
 ```
 
 ```
 ##### Takeaway from Ethernaut
+
+# 19. Alien Codex
+### Challenge
+- 
+### Purpose
+
+### Contract
+```
+
+```
+### Solution
+##### Explanation
+
+##### Exploit
+```
+
+```
+##### Takeaway from Ethernaut
+
+# 20. Denial
+### Challenge
+- 
+### Purpose
+
+### Contract
+```
+
+```
+### Solution
+##### Explanation
+
+##### Exploit
+```
+
+```
+##### Takeaway from Ethernaut
+

